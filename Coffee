@@ -1,4 +1,22 @@
 rm(list = ls())
 Coffee <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Coffee.csv")
 
+##Extract export data
+export <- Coffee %>% filter(Element == "Export Value", Year == 2021) %>% select(Area, Item, Value) 
+export_2021 <- export %>% group_by(Area) %>% summarize(Value = sum(Value)) %>% mutate(share = Value/43765871*100)
+export_2021_1 <- export_2021 %>% filter(Area %in% c("Asia", "Viet Nam", "Brazil", "Switzerland", "Colombia", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland"))
+Export_coffee <- ggplot(export_2021, aes(x = Area, y = Value)) +
+         geom_col(fill = "skyblue") + geom_text(aes(label = share), hjust= 0.5) +
+         coord_flip() 
 
+Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of Coffee with it share value", x = "" , y = "Export Value (million USD)") 
+
+##Extract import data
+export <- Coffee %>% filter(Element == "Export Value", Year == 2021) %>% select(Area, Item, Value) 
+export_2021 <- export %>% group_by(Area) %>% summarize(Value = sum(Value)) %>% mutate(share = Value/43765871*100)
+export_2021_1 <- export_2021 %>% filter(Area %in% c("Asia", "Viet Nam", "Brazil", "Switzerland", "Colombia", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland"))
+Export_coffee <- ggplot(export_2021, aes(x = Area, y = Value)) +
+         geom_col(fill = "skyblue") + geom_text(aes(label = share), hjust= 0.5) +
+         coord_flip() 
+
+Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of Coffee with it share value", x = "" , y = "Export Value (million USD)") 
