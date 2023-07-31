@@ -1,1 +1,4 @@
+rm(list = ls())
+Coffee <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Coffee.csv")
+
 
