@@ -4,19 +4,25 @@ Coffee <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/
 ##Extract export data
 export <- Coffee %>% filter(Element == "Export Value", Year == 2021) %>% select(Area, Item, Value) 
 export_2021 <- export %>% group_by(Area) %>% summarize(Value = sum(Value)) %>% mutate(share = Value/43765871*100)
-export_2021_1 <- export_2021 %>% filter(Area %in% c("Asia", "Viet Nam", "Brazil", "Switzerland", "Colombia", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland"))
+export_2021_1 <- export_2021 %>% filter(Area %in% c("Asia", "Viet Nam", "Brazil", "Switzerland", "Colombia", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland", "South America"))
 Export_coffee <- ggplot(export_2021, aes(x = Area, y = Value)) +
          geom_col(fill = "skyblue") + geom_text(aes(label = share), hjust= 0.5) +
          coord_flip() 
 
-Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of Coffee with it share value", x = "" , y = "Export Value (million USD)") 
+Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "South America", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of Coffee with it share value", x = "" , y = "Export value (million USD)") 
 
 ##Extract import data
-export <- Coffee %>% filter(Element == "Export Value", Year == 2021) %>% select(Area, Item, Value) 
-export_2021 <- export %>% group_by(Area) %>% summarize(Value = sum(Value)) %>% mutate(share = Value/43765871*100)
-export_2021_1 <- export_2021 %>% filter(Area %in% c("Asia", "Viet Nam", "Brazil", "Switzerland", "Colombia", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland"))
-Export_coffee <- ggplot(export_2021, aes(x = Area, y = Value)) +
+import <- Coffee %>% filter(Element == "Import Value", Year == 2021) %>% select(Area, Item, Value) 
+import_2021 <- import %>% group_by(Area) %>% summarize(Value = sum(Value)) %>% mutate(share = Value/43845035*100)
+
+ggplot(import_2021, aes(x = Area, y = share)) +
          geom_col(fill = "skyblue") + geom_text(aes(label = share), hjust= 0.5) +
          coord_flip() 
 
-Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of Coffee with it share value", x = "" , y = "Export Value (million USD)") 
+import_2021_1 <- import_2021 %>% filter(Area %in% c("Asia", "United States of America", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland", "Canada", "Japan", "Northern America"))
+
+import_coffee <- ggplot(import_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Canada", "Germany", "Japan", "Northern America", "UK", "USA")) + labs(title = "Import of coffee with its share value", x = "" , y = "Import value (million USD)") 
+
+Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "South America", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of coffee with its share value", x = "" , y = "Export value (million USD)") 
+
+Export_coffee + import_coffee
