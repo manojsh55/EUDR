@@ -1,3 +1,6 @@
 
 palm_oil <- data.frame(country = c("Indonesia", "Malaysia", "Papua New Guinea", "Peru", "Brazil", "Equador", "Cameroon"), def = c(53.8, 39.6, 25.3, 53.1, 39.4, 60.8, 16.9))
 
+ggplot(palm_oil, aes(x = country, y = def)) + geom_col(fill = "lightblue") + geom_text(aes(label = scales::percent(def, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + labs(title = "Estimated
+percent of oil palm planted area coming from deforestation over 1989-2013", x = "" , y = "Percent of area from deforestation") 
+
