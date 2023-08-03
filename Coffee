@@ -21,8 +21,8 @@ ggplot(import_2021, aes(x = Area, y = share)) +
 
 import_2021_1 <- import_2021 %>% filter(Area %in% c("Asia", "United States of America", "Germany", "Europen Union (27)", "United Kingdom of Great Britain and Northern Ireland", "Canada", "Japan", "Northern America"))
 
-import_coffee <- ggplot(import_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Canada", "Germany", "Japan", "Northern America", "UK", "USA")) + labs(title = "Import of coffee with its share value", x = "" , y = "Import value (million USD)") 
+import_coffee <- ggplot(import_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Canada", "Germany", "Japan", "Northern America", "UK", "USA")) + labs(title = "Import of coffee with its share value", x = "" , y = "Import value (million USD)") + ylim(0, 9500)
 
-Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "South America", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of coffee with its share value", x = "" , y = "Export value (million USD)") 
+Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01, size = 3)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "South America", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of coffee with its share value", x = "" , y = "Export value (million USD)") + ylim(0, 9500)
 
 Export_coffee + import_coffee
