@@ -26,3 +26,8 @@ import_coffee <- ggplot(import_2021_1, aes(x = Area, y = Value/1000)) + geom_col
 Export_coffee <- ggplot(export_2021_1, aes(x = Area, y = Value/1000)) + geom_col(fill = "#6F4E37") + geom_text(aes(label = scales::percent(share, scale=1)), hjust= -0.01)  + coord_flip() + theme_minimal() + scale_x_discrete(labels = c("Asia", "Brazil", "Colombia", "Germany", "South America", "Switzerland", "UK", "Vietnam")) + labs(title = "Export of coffee with its share value", x = "" , y = "Export value (million USD)") + ylim(0,12500)
 
 Export_coffee + import_coffee
+
+
+
+
+
