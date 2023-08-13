@@ -1,1 +1,17 @@
-Trade_DetailedTradeMatrix_E_All_Data <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Trade_DetailedTradeMatrix_E_All_Data/Trade_DetailedTradeMatrix_E_All_Data.csv")
+library(readlx)
+library(dplyr)
+library(tidyverse)
+
+trade_all <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Trade_DetailedTradeMatrix_E_All_Data/Trade_DetailedTradeMatrix_E_All_Data.csv")
+
+coffee <- trade_all %>% filter(Item == c("Coffee extracts", "Coffee husks & skins", "Coffee substitutes", "Coffee, decaffeinated or roasted", "Coffee, green" ), Element == c("Export Quantity", "Export Value"))
+
+
+
+
+
+
+
+
+Trade_DetailedTradeMatrix_E_All_Data_NOFLAG <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Trade_DetailedTradeMatrix_E_All_Data/Trade_DetailedTradeMatrix_E_All_Data_NOFLAG.csv")
+View(Trade_DetailedTradeMatrix_E_All_Data_NOFLAG)
