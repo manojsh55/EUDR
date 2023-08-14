@@ -2,6 +2,7 @@ library(dplyr)
 library(tidyverse)
 library(writexl)
 library(data.table)
+library(openxlsx)
 
 
 ## Import Data
@@ -17,12 +18,12 @@ coffee_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in
 setDT(coffee_value1)
 
 coffee_value <- coffee_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 coffee_value$share <- replace(coffee_value$share, is.nan(coffee_value$share), 0)
 
-eu_uk_coffee <- coffee_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_coffee <- coffee_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 coffee_value <- bind_rows(eu_uk_coffee, coffee_value)
 
@@ -39,12 +40,12 @@ cattle_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in
 setDT(cattle_value1)
 
 cattle_value <- cattle_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 cattle_value$share <- replace(cattle_value$share, is.nan(cattle_value$share), 0)
 
-eu_uk_cattle <- cattle_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_cattle <- cattle_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 cattle_value <- bind_rows(eu_uk_cattle, cattle_value)
 
@@ -67,12 +68,12 @@ coca_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in% 
 setDT(coca_value1)
 
 coca_value <- coca_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 coca_value$share <- replace(coca_value$share, is.nan(coca_value$share), 0)
 
-eu_uk_coca <- coca_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_coca <- coca_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 coca_value <- bind_rows(eu_uk_coca, coca_value)
 
@@ -90,18 +91,18 @@ palm_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in% 
 setDT(palm_value1)
 
 palm_value <- palm_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 palm_value$share <- replace(palm_value$share, is.nan(palm_value$share), 0)
 
-eu_uk_palm <- palm_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_palm <- palm_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 palm_value <- bind_rows(eu_uk_palm, palm_value)
 
 write.csv(palm_value, file = "palm_export_share.csv", row.names = FALSE)
 
-Check:
+##Check:
 
 palm_Brazil <- palm_value %>% filter(Reporter.Countries == "Brazil", Year == "Y2021") 
 
@@ -114,12 +115,12 @@ soy_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in% c
 setDT(soy_value1)
 
 soy_value <- soy_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 soy_value$share <- replace(soy_value$share, is.nan(soy_value$share), 0)
 
-eu_uk_soy <- soy_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_soy <- soy_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 soy_value <- bind_rows(eu_uk_soy, soy_value)
 
@@ -137,12 +138,12 @@ rubber_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in
 setDT(rubber_value1)
 
 rubber_value <- rubber_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 rubber_value$share <- replace(rubber_value$share, is.nan(rubber_value$share), 0)
 
-eu_uk_rubber <- rubber_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_rubber <- rubber_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 rubber_value <- bind_rows(eu_uk_rubber, rubber_value)
 
@@ -162,12 +163,12 @@ wood_value1 <- Forestry_Trade_Flows_E_All_Data_NOFLAG %>% filter(Item %in% c("In
 setDT(wood_value1)
 
 wood_value <- wood_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
-  , Export_value := sum(Value), by = .(Reporter.Countries, Year)][
-  , share := Value / Export_value]
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+  , share := Value / Total_value]
 
 wood_value$share <- replace(wood_value$share, is.nan(wood_value$share), 0)
 
-eu_uk_wood <- wood_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Export_value = mean(Export_value)) %>% mutate(Partner.Countries = "EU & UK")
+eu_uk_wood <- wood_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
 
 wood_value <- bind_rows(eu_uk_wood, wood_value)
 
@@ -175,5 +176,23 @@ write.csv(wood_value, file = "wood_export_share.csv", row.names = FALSE)
 
 ##Check:
 
-wood_Brazil <- wood_value %>% filter(Reporter.Countries == "Brazil", Year == "Y2021") 
+wood_Brazil <- wood_value %>% filter(Reporter.Countries == "Brazil", Year == "Y2017") 
 
+##Export into the excel file as sheet
+
+
+
+# Combine dataframes into a list
+df_list <- list(coffee = coffee_Brazil, soy = soy_Brazil, cattle = cattle_Brazil, coca = coca_Brazil, palm = palm_Brazil, rubber = rubber_Brazil, wood = wood_Brazil)
+
+# Create a new Excel workbook
+wb <- createWorkbook()
+
+# Loop through the list and add dataframes to separate sheets
+for (df_name in names(df_list)) {
+  addWorksheet(wb, sheetName = df_name)
+  writeData(wb, sheet = df_name, x = df_list[[df_name]])
+}
+
+# Save the workbook to a file
+saveWorkbook(wb, "Brazil_export_share_FRCs.xlsx", overwrite = TRUE)
