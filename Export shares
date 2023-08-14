@@ -4,7 +4,7 @@ library(writexl)
 library(data.table)
 
 
-##
+## Import Data
 
 Trade_DetailedTradeMatrix_E_All_Data_NOFLAG <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Trade_DetailedTradeMatrix_E_All_Data/Trade_DetailedTradeMatrix_E_All_Data_NOFLAG.csv")
 Trade_DetailedTradeMatrix_E_All_Data_NOFLAG[is.na(Trade_DetailedTradeMatrix_E_All_Data_NOFLAG)] <- 0
@@ -176,10 +176,4 @@ write.csv(wood_value, file = "wood_export_share.csv", row.names = FALSE)
 ##Check:
 
 wood_Brazil <- wood_value %>% filter(Reporter.Countries == "Brazil", Year == "Y2021") 
-
-
-
-##Check
-wood_Australia <- wood_value %>% filter(Reporter.Countries == "China", Year == "Y2017")
-sum(wood_Australia$share)
 
