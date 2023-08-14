@@ -31,10 +31,6 @@ write.csv(coffee_value, file = "coffee_export_share.csv", row.names = FALSE)
 ##Check:
 coffee_Brazil <- coffee_value %>% filter(Reporter.Countries == "Brazil", Year == "Y2021") 
 
-
-
-coffee_value <- coffee_value1 %>% group_by(Reporter.Countries, Partner.Countries, Year) %>% summarise(Value = sum(Value)) %>% group_by(Reporter.Countries, Year) %>% mutate(Export_value = sum(Value)) %>% mutate(share = Value/Export_value)
-
 ##Cattle
 ## Item == c("Cattle", "Cattle fat, unrendered", "Cattle, butcher fat", "Edible offal of cattle, fresh, chilled or frozen", "Feed, compound, cattle", "Hides, cattle nes", "Hides, cattle, dry salted", "Hides, wet-salted of cattle", "Meat of cattle boneless, fresh or chilled", "Meat of cattle with the bone, fresh or chilled", "Raw hides and skins of cattle", "Raw milk of cattle") 
 
