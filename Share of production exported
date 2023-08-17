@@ -73,6 +73,8 @@ Indicator1 <- rbind(palm_production_export, coffee_production_export, soy_produc
 setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of production exported")
 write_csv(Indicator1, "exportshare_production.csv")
 
+
+
 Indicator1 %>%
  filter(share_prod_exp >= 0L & share_prod_exp <= NA_integer_ | is.na(share_prod_exp)) %>%
  ggplot() +
