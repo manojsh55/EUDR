@@ -1,0 +1,30 @@
+##1. import library ##
+library(readxl)
+
+
+##2. Import data ##
+VSS <- read_excel("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/VSS/VSS.xlsx", 
++     sheet = "Total")
+View(VSS)
+
+
+##3. Wrangle data ##
+vss1 <- VSS %>% mutate(total = rowSums(. [c("Cocoa", "Coffee", "Oil Palm", "Soyabeans", "Wood")])) %>% filter(total > 0) %>% select(-c(total)) %>% pivot_longer(cols = -c(Country), names_to = "Commodity", values_to = "Value") %>% mutate(name = Country)
+
+
+heatmap_plot <- ggplot(vss1, aes(x = Country, y = Commodity, fill = Value)) +
+  geom_tile() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Heatmap of Values", y = "Commodity", x = "Country")
+
+print(heatmap_plot)
+
+
+##4. Import world data ##
+library(rnaturalearth)
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+
+##5. merge data with world map data ##
+
+world_data <- merge(world, vss1, by = "name", all = TRUE)
