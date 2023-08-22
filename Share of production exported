@@ -52,7 +52,7 @@ coffee_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>%
 filter(
   Item.Code %in% c(656:660),
   Element %in% c("Export Quantity", "Export Value"),
-  Reporter.Countries %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "Côte d'Ivoire")
+  Reporter.Countries %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "C\xf4te d'Ivoire")
   ) %>% 
 select(c(Reporter.Countries, Partner.Countries, Y2015:Y2018, Item.Code, Item, Element)) %>% 
 pivot_longer(cols = -c(Reporter.Countries, Partner.Countries, Item.Code, Item, Element), names_to = "Year", values_to = "Value") %>% 
@@ -68,7 +68,7 @@ coffee_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>%
 filter(
   Item.Code %in% c(656:660), 
   Element == "Production", 
-  Area %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "Côte d'Ivoire")
+  Area %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "C\xf4te d'Ivoire")
   ) %>% 
 select(c(Area, Item.Code, Item, Y2015:Y2018)) %>% 
 pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") %>% 
@@ -85,7 +85,7 @@ group_by(Area, Item.Code, Item) %>%
 summarise(Total_production = sum(Total_production), `Export Quantity` = sum(`Export Quantity`), `Export Value` = sum(`Export Value`)) %>% 
 mutate(Export_share_production = `Export Quantity`/Total_production) %>% 
 group_by(Area) %>% 
-mutate(Export_share_value = `Export Value`/sum(`Export Value`))
+mutate(Export_share_value = `Export Value`/sum(`Export Value`)) %>% mutate(Area = case_when(Area %in% c("C\xf4te d'Ivoire") ~ "Cote d'Ivore", TRUE ~ Area))
 
 
 coffee_green <- coffee %>% filter(Item.Code == 656)
@@ -140,7 +140,7 @@ soy_export <- soy_value1 %>%
   group_by(Reporter.Countries, Item.Code, Year, Element, Item) %>% 
   summarise(Total_export = sum(Value)) %>% 
   rename(Area = Reporter.Countries) %>% 
-  pivot_wider(names_from = "Element", values_from = c(Total_export)) %>% group_by(Area, Item.Code, Item) %>% summarise(`Export Quantity` = sum(`Export Quantity`), `Export Value` = sum(`Export Value`)) %>% group_by(Area) %>% mutate(Export_share_value = `Export Value`/ sum(`Export Value`))
+  pivot_wider(names_from = "Element", values_from = c(Total_export))
 
 soy_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>% 
   filter(
@@ -149,17 +149,35 @@ soy_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>%
     Area %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "C\xf4te d'Ivoire")
   ) %>% 
   select(c(Area, Item.Code, Item, Y2015:Y2018)) %>% 
-  pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") %>% group_by(Area, Item.Code, Item) %>% summarise(Total_production = sum(Value))
-  
+  pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") %>% 
+  mutate (Value = ifelse(is.na(Value), 0, Value)) %>% 
+  rename(Total_production = Value)
 
-soy1 <- full_join(soy_prod1, soy_export, by = c("Area", "Item.Code", "Item")) %>% mutate(Export_share_production = `Export Quantity`/Total_production)
+soy1 <- full_join(soy_prod1, soy_export, by = c("Area", "Year", "Item.Code", "Item")) %>% 
+  mutate(Export_share_production = `Export Quantity`/Total_production) %>% 
+  group_by(Area, Year) %>% 
+  mutate(Export_share_value = `Export Value`/sum(`Export Value`))
 
-soy <- soy1 %>% filter(Item.Code %in% 236:237)
+soy <- soy1 %>% 
+  group_by(Area, Item.Code, Item) %>% 
+  summarise(Total_production = sum(Total_production), `Export Quantity` = sum(`Export Quantity`), `Export Value` = sum(`Export Value`)) %>% 
+  mutate(Export_share_production = `Export Quantity`/Total_production) %>% 
+  group_by(Area) %>% 
+  mutate(Export_share_value = `Export Value`/sum(`Export Value`)) %>% mutate(Area = case_when(Area %in% c("C\xf4te d'Ivoire") ~ "Cote d'Ivore", TRUE ~ Area))
 
-write_csv(soy, "soy.csv")
-
-setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of production exported")
-
+ggplot(soy) +
+  aes(x = Area, y = Export_share_value, fill = Item) +
+  geom_col() +
+  scale_fill_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+   theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14L),
+    axis.text = element_text(size = 14)
+  ) +
+ labs(x = " ", y = "Export share by value", fill = " ")
 
 ggplot(soy) +
   aes(x = Area, y = Export_share_production) +
@@ -171,6 +189,19 @@ ggplot(soy) +
 
 
 
+<<<<<<< HEAD
+=======
+ggplot(soy) +
+  aes(x = Area, y = Export_share_production) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  facet_wrap(vars(Item)) +
+  geom_text(aes(label = scales::percent(Export_share_production, scale = 100)), vjust = -1) +
+  ylim(0, 1)
+
+
+
+>>>>>>> 377dabef1a0f1763c56736420e81dcaf6e83d341
 ##Oil Palm ##
 
 palm_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% 
@@ -187,7 +218,7 @@ palm_export <- palm_value1 %>%
   group_by(Reporter.Countries, Item.Code, Year, Element, Item) %>% 
   summarise(Total_export = sum(Value)) %>% 
   rename(Area = Reporter.Countries) %>% 
-  pivot_wider(names_from = "Element", values_from = c(Total_export)) %>% group_by(Area, Item.Code, Item) %>% summarise(`Export Quantity` = sum(`Export Quantity`), `Export Value` = sum(`Export Value`)) %>% group_by(Area) %>% mutate(Export_share_value = `Export Value`/ sum(`Export Value`))
+  pivot_wider(names_from = "Element", values_from = c(Total_export))
 
 palm_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>% 
   filter(
@@ -196,12 +227,44 @@ palm_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>%
     Area %in% c("Brazil", "Colombia", "Malaysia", "Indonesia", "Ghana", "C\xf4te d'Ivoire")
   ) %>% 
   select(c(Area, Item.Code, Item, Y2015:Y2018)) %>% 
-  pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") %>% group_by(Area, Item.Code, Item) %>% summarise(Total_production = sum(Value))
+  pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") %>% 
+  mutate (Value = ifelse(is.na(Value), 0, Value)) %>% 
+  rename(Total_production = Value)
 
+palm1 <- full_join(palm_prod1, palm_export, by = c("Area", "Year", "Item.Code", "Item")) %>%
+  mutate_at(vars("Total_production", "Export Quantity", "Export Value"), ~ ifelse(is.na(.), 0, .)) %>%
+  mutate(Export_share_production = `Export Quantity` / Total_production) %>% 
+  group_by(Area, Year) %>% 
+  mutate(Export_share_value = `Export Value` / sum(`Export Value`))
 
-palm1 <- full_join(palm_prod1, palm_export, by = c("Area", "Item.Code", "Item")) %>% mutate(Export_share_production = `Export Quantity`/Total_production)
+palm <- palm1 %>% 
+  group_by(Area, Item.Code, Item) %>% 
+  summarise(Total_production = sum(Total_production), `Export Quantity` = sum(`Export Quantity`), `Export Value` = sum(`Export Value`)) %>% 
+  mutate(Export_share_production = `Export Quantity`/Total_production) %>% 
+  group_by(Area) %>% 
+  mutate(Export_share_value = `Export Value`/sum(`Export Value`)) %>% mutate(Area = case_when(Area %in% c("C\xf4te d'Ivoire") ~ "Cote d'Ivore", TRUE ~ Area))
 
-write_csv(palm1, "palm.csv")
+ggplot(palm) +
+  aes(x = Area, y = Export_share_value, fill = Item) +
+  geom_col() +
+  scale_fill_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14L),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(x = " ", y = "Export share by value", fill = " ")
+
+ggplot(palm) +
+  aes(x = Area, y = Export_share_production) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  facet_wrap(vars(Item)) +
+  geom_text(aes(label = scales::percent(Export_share_production, scale = 100)), vjust = -1) +
+  ylim(0, 1)
 
 
 ## Cocoa
