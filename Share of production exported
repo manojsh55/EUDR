@@ -99,8 +99,7 @@ ggplot(coffee) +
     `Coffee substitutes` = "#F5F5F5",
     `Coffee, decaffeinated or roasted` = "#5AB2A8",
     `Coffee, green` = "#003C30")
-  ) +
-  coord_flip() +
+  ) + coord_flip() +
   theme_minimal() +
    theme(
     legend.text = element_text(size = 14),
@@ -161,6 +160,14 @@ write_csv(soy, "soy.csv")
 
 setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of production exported")
 
+
+ggplot(soy) +
+  aes(x = Area, y = Export_share_production) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  facet_wrap(vars(Item)) +
+  geom_text(aes(label = scales::percent(Export_share_production, scale = 100)), vjust = -1) +
+  ylim(0, 1)
 
 
 
@@ -327,11 +334,11 @@ write_csv(Indicator1, "exportshare_production.csv")
 
 ##Export data ##
 
-coffee_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(656:660), Element %in% c("Export Quantity", "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Item.Code, Item, Element, Y2010:Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries, Item.Code, Item, Element), names_to = "Year", values_to = "Value")
+coffee_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(656:660), Element %in% c("Export Quantity", "Export Value")) %>% select(c(Reporter.Countries, Partner.Countries, Item.Code, Item, Element, Y2010:Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries, Item.Code, Item, Element), names_to = "Year", values_to = "Value")
 
-coffee_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(656:660), Element == "Production") %>% select(c(Area, Y2010:Y2021)) %>% pivot_longer(cols = -c(Area), names_to = "Year", values_to = "Value") 
+coffee_prod1 <- Production_Crops_Livestock_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(656:660), Element == "Production") %>% select(c(Area, Item.Code, Item, Y2010:Y2021)) %>% pivot_longer(cols = -c(Area, Item.Code, Item), names_to = "Year", values_to = "Value") 
 
-df_list <- list(coffee = coffee_value1, coffee_prod1)
+df_list <- list(coffee_export = coffee_value1, coffee_production = coffee_prod1)
 
 wb <- createWorkbook()
 
