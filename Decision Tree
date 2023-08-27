@@ -1,0 +1,60 @@
+# load libraries
+library(xgboost)
+library(caret)
+library(dplyr)
+library(DiagrammeR)
+
+
+# read in dataset
+churn_data <- read.csv("Churn_Modelling.csv")
+
+# remove variables we won't be using for modeling
+need_data <- churn_data %>% select(-RowNumber, -CustomerId, -Surname)
+
+# one hot encode all categorical variables
+dummy <- dummyVars(" ~ .", data = need_data)
+need_data <- data.frame(predict(dummy, newdata = need_data))
+
+y_label <- need_data$Exited
+need_data <- need_data %>% select(-Exited)
+need_data <- data.frame(Exited = y_label, need_data)
+
+# convert Exited column to a factor
+need_data$Exited <- as.factor(need_data$Exited)
+
+# split data into train / validation
+set.seed(0)
+indexes <- sample(1:nrow(need_data), 0.7 * nrow(need_data))
+
+train_data <- need_data[indexes,]
+val_data <- need_data[-indexes,]
+
+
+
+# create tuning grid
+grid_default <- expand.grid(nrounds = c(50, 75, 100, 150, 200, 250),
+                            max_depth = c(2, 3, 4, 5),
+                            eta = c(0.05, 0.1, 0.15),
+                            gamma = c(0),
+                            colsample_bytree = c(0.7),
+                            min_child_weight = c(5),
+                            subsample = c(0.6))
+
+# set random seed
+set.seed(1234)
+
+# train XGBoost model
+xgb_model <- train(formula(need_data), 
+                   data = need_data,
+                   tuneGrid = grid_default,
+                   method = "xgbTree",
+                   metric = "Kappa") 
+
+# plot the first tree
+xgb.plot.tree(model = xgb_model$finalModel, trees = 1)
+
+                   data = need_data,
+                   tuneGrid = grid_default,
+                   method = "xgbTree",
+                   metric = "Kappa")
+
