@@ -1,0 +1,1597 @@
+library(dplyr)
+library(tidyverse)
+library(writexl)
+library(data.table)
+library(openxlsx)
+library(ggplot2)
+library(ggrepel)
+library(readxl)
+library(patchwork)
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK")
+
+
+### 1.  Import data ##
+
+Trade_soya <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Soya/soya.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "soya") 
+
+Trade_coffee <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Coffee/coffee.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "coffee")
+
+Trade_cattle <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Cattle/cattle.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>%
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "cattle")
+
+
+Trade_palm <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Palm/palm.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "palm")
+
+Trade_wood <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Wood/wood.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "wood")
+
+Trade_cocoa <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Cocoa/cocoa.csv") %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(share_2 = Export / sum(ifelse(PartnerDesc == "World", Export, 0))) %>%
+  mutate(Commodity = "cocoa")
+
+
+##2. Merging data##
+
+FRC_export <- bind_rows(Trade_soya, Trade_coffee, Trade_cattle, Trade_cocoa, Trade_palm, Trade_wood) %>% 
+  mutate(ReporterDesc = case_when(
+    ReporterDesc == "T\xfcrkiye" ~ "Turkey" ,
+    ReporterDesc == "C\xf4te d'Ivoire" ~ "Cote d'Ivore",
+    TRUE ~ ReporterDesc
+  )) %>%
+  mutate(PartnerDesc = case_when(
+   PartnerDesc == "T\xfcrkiye" ~ "Turkey" ,
+   PartnerDesc == "C\xf4te d'Ivoire" ~ "Cote d'Ivore",
+    TRUE ~ PartnerDesc
+  )) 
+
+eu_uk_FRC <- FRC_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, Commodity, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), share_2 = sum(share_2)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+FRC <- bind_rows(FRC_export, eu_uk_FRC) %>% 
+  mutate(items_export = Export/share_2) %>% 
+  group_by(ReporterDesc, Commodity) %>% 
+  mutate(commodity_export = sum(Export[PartnerDesc== "World"])) %>%
+  mutate(share_1 = Export/commodity_export) %>%  ##how much of share by each items of each partner country out of commodity? In essence, share_3 = share_1*share_2 ##
+  group_by(ReporterDesc, Commodity, PartnerDesc) %>%
+  mutate(share_3 = share_1/sum(share_1))
+
+write.xlsx(FRC, "FRC.xlsx")
+
+##3. Selection of countries
+Indicator_5 <- read_excel("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Deforestation associated with production/Indicator 5.xlsx", 
+                                   +     sheet = "Sheet2")
+View(Indicator_5)
+
+a <- Indicator_5 %>%
+  ggplot() +
+  aes(x = Countries, y = `Forest loss associated with crop`) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 19)
+  ) +
+  labs(x = "", y = 'Forest loss associated with agriculture (000 ha)')
+  
+
+
+b <- Indicator_5 %>% mutate(Rate1 = Rate/1000, Rate3 = `Forest loss associated with crop`*1000/Rate) %>%
+  ggplot() +
+  aes(x = Countries, y = Rate1) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(size = 19),
+    axis.text = element_text(size = 20)
+  ) +
+  geom_text(aes(label = scales::percent(Percent, scale=100, accuracy = 0.01)), hjust= -0.01, size =5) +
+  labs(x = "", y = "Annual average forest loss over 2001 to 2014 (000 ha)") +
+  ylim(0, 3000)
+
+
+a + b 
+
+
+##3. Global share of soya, coffee, cattle, palm, wood, and cocoa
+
+Global_share <- FRC %>% 
+  filter(PartnerDesc == "World") %>% 
+  group_by(ReporterDesc, Commodity) %>% 
+  summarise(Export = sum(Export)) %>%
+  group_by(Commodity) %>%
+  mutate(Global_export_share = Export/sum(Export))
+
+##3.1. soya
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+       Commodity == "soya") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(x = "", y = "Global export share of soya") + 
+  ylim(0,0.4)
+  
+
+##3.2. cattle
+
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+                        Commodity == "cattle") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of cattle", x = "") + 
+  ylim(0,0.11)
+
+
+
+##3.3. Wood
+
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+                        Commodity == "wood") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of wood", x = "") + 
+  ylim(0,0.04)
+
+##3.4. palm
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+                        Commodity == "palm") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of palm oil", x = "") + 
+  ylim(0,0.55)
+
+##3.5. coffee
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                           "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                           "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                           "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+                        Commodity == "coffee") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of coffee", x = "") + 
+  ylim(0,0.2)
+
+##3.6. Wood
+Global_share %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"),
+                        Commodity == "cocoa") %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = Global_export_share) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(Global_export_share, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of cocoa", x = "") + 
+  ylim(0,0.11)
+
+
+##total global share of tropical countries
+
+Total_tropical_share <- Global_share %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                            "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                            "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                            "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines")) %>%
+  group_by(Commodity) %>%
+  summarise(Global_export_share = sum(Global_export_share))
+
+
+
+
+##5. Proportion of items
+
+FRC %>% filter(PartnerDesc == "World", ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                                          "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                                          "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                                          "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"), Commodity == "soya") %>%
+  ggplot() +
+  aes(
+    x = as.character(CmdCode),
+    y = share_3
+   ) +
+  geom_col(fill = "skyblue") +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free") +
+  labs(x = "HS code of soya items", y = "Export share") + 
+ theme(
+    axis.text = element_text(size = 14),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), vjust = -0.1, size = 5) +
+  ylim(0, 1.2) 
+
+
+##6. Export to top 5 countries
+
+test1 <- FRC %>% 
+  select(ReporterDesc, PartnerDesc, Commodity, CmdCode, Export) %>%
+  group_by(ReporterDesc, PartnerDesc, Commodity) %>%
+  summarise(Export = sum(Export)) %>% 
+  group_by(ReporterDesc, Commodity) %>%
+  mutate(export_share_1 = Export/sum(Export[PartnerDesc == "World"])) %>%
+  group_by(Commodity) %>%
+  mutate(export_share_2 = Export/sum(Export[PartnerDesc == "World"])) %>%
+  group_by(ReporterDesc) %>%
+  mutate(export_share_3 = Export/sum(Export[PartnerDesc == "World"]))
+
+  
+test1 %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                           "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                           "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                           "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"), Commodity == "soya", !(PartnerDesc %in% "World")) %>%
+  group_by(ReporterDesc, Commodity) %>%
+  mutate(Rank = rank(desc(export_share_2))) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 4) %>%
+  select(-Rank) %>%
+  ggplot() +
+  aes(
+    x = PartnerDesc,
+    y = export_share_2
+  ) +
+  geom_col(fill = "skyblue") +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free") +
+  labs(x = "", y = "Global share of soya with export proportion in parenthesis") + 
+  coord_flip() +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 13),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 13)
+  ) +
+  geom_text(aes(label = paste0(scales::percent(export_share_2, scale = 100, accuracy = 0.001), " (", scales::percent(export_share_1, scale = 100, accuracy = 0.1), ")")), 
+          hjust = -0.01, size = 4)+
+  ylim(0,0.30)
+
+
+###7. Market power of the commodity:
+
+test1 %>% filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                                     "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                                     "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                                     "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia", "Nicaragua", "Philippines"), PartnerDesc %in% "World") %>%
+  ggplot() +
+  aes(
+    x = export_share_3,
+    y = export_share_2,
+    colour = Commodity,
+    label = Commodity
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 3L, scales = "free_y") +
+  labs(x = "Export proportion of commodities in the country", y = "Global share of commodities") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) 
+
+##4. Export the data ##
+
+setwd("C:\\Users\\Manoj\\OneDrive - Kansas State University\\EUDR\\Data\\Share of exports to the EU and the UK\\Brazil")
+
+FRC_Brazil <- FRC %>% 
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(Commodity, CmdCode, CmdDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+## 1. Coffee ##
+
+FRC_tropical_coffee <- FRC %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                             "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                             "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                             "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+         Commodity == "coffee") 
+
+
+FRC_tropical_coffee_world <- FRC_tropical_coffee %>% filter(PartnerDesc == "World")
+
+FRC_tropical_coffee_world %>%
+  filter(share_4 >= 0.005 & share_4 <= 0.2) %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + 
+  ylim(0,0.2)
+
+
+
+FRC_tropical_coffee_world %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + 
+  ylim(0,0.2)
+
+
+FRC_tropical_coffee_top <- FRC_tropical_coffee %>% filter(!(PartnerDesc == "World")) %>%
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+ggplot(FRC_tropical_coffee_top) +
+  aes(x = PartnerDesc, y = share_3) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  coord_flip() +
+  facet_wrap(vars(ReporterDesc), scales = "free", ncol = 4L) +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+ theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + ylim(0,1)
+
+
+##2.soya ## 
+
+FRC_tropical_soya <- FRC %>% 
+filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                           "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                           "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                           "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+       Commodity == "soya")
+
+
+FRC_tropical_soya_world <- FRC_tropical_soya %>% filter(PartnerDesc == "World") %>% group_by(ReporterDesc) %>% summarise(share_4 = sum(share_4))
+sum(FRC_tropical_soya_world$share_4)
+
+
+   ##Global share.......
+FRC_tropical_soya_world %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + 
+  ylim(0,0.4)
+
+
+
+##proportion of share by items
+FRC_tropical_soya_world <- FRC_tropical_soya %>% filter(PartnerDesc == "World")
+
+ggplot(FRC_tropical_soya_world) +
+  aes(x = as.character(CmdCode), y = share_2) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc)) +
+  geom_text(aes(label = scales::percent(share_2, scale = 100, accuracy = 0.01)), hjust = -0.01, size = 4) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20L),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 15)
+  ) +
+  labs(y = "", x = "HS code", size = 10) +
+  ylim(0,1.2)
+
+##
+
+FRC_tropical_soya_top <- FRC_tropical_soya %>% filter(!(PartnerDesc == "World")) %>%
+  group_by(ReporterDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+ggplot(FRC_tropical_soya_top) +
+  aes(x = PartnerDesc, y = share_3) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  coord_flip() +
+  facet_wrap(vars(ReporterDesc), scales = "free") +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") 
+
+
+##scatter plot
+
+ggplot(FRC_tropical_soya_world) +
+  aes(
+    x = share_3 * share_4,
+    y = share_3,
+    colour = as.character(CmdCode),
+    label = CmdCode
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free_y") +
+  labs(x = "Global share of soya items", y = "Export proportion of soya items") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  ylim(0, 1)
+
+
+
+ggplot(FRC_tropical_soya_top) +
+  aes(x = PartnerDesc, y = share_1, fill = as.character(CmdCode)) +
+  geom_col() +
+  scale_color_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc)) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10)
+  )
+
+
+##3.Palm ## 
+
+FRC_tropical_palm <- FRC %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                             "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                             "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                             "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+         Commodity == "palm") 
+
+
+FRC_tropical_palm_world <- FRC_tropical_palm %>% filter(PartnerDesc == "World") %>% group_by(ReporterDesc) %>% summarise(share_4 = sum(share_4))
+sum(FRC_tropical_palm_world$share_4)
+
+##Global share.......
+FRC_tropical_palm_world %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of palm oil", x = "") + 
+  ylim(0,0.6)
+
+
+
+##proportion of share by items
+FRC_tropical_palm_world <- FRC_tropical_palm %>% filter(PartnerDesc == "World")
+
+ggplot(FRC_tropical_palm_world) +
+  aes(x = as.character(CmdCode), y = share_2) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc)) +
+  geom_text(aes(label = scales::percent(share_2, scale = 100, accuracy = 0.01)), hjust = -0.01, size = 4) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20L),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 15)
+  ) +
+  labs(y = "", x = "HS code", size = 10) +
+  ylim(0,1.2)
+
+##
+
+FRC_tropical_palm_top <- FRC_tropical_palm %>% filter(!(PartnerDesc == "World")) %>%
+  group_by(ReporterDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+ggplot(FRC_tropical_palm_top) +
+  aes(x = PartnerDesc, y = share_3) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  coord_flip() +
+  facet_wrap(vars(ReporterDesc), scales = "free") +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") 
+
+
+##scatter plot
+
+ggplot(FRC_tropical_palm_world) +
+  aes(
+    x = share_3 * share_4,
+    y = share_3,
+    colour = as.character(CmdCode),
+    label = CmdCode
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free_y") +
+  labs(x = "Global share of palm items", y = "Export proportion of palm items") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  ylim(0, 1)
+
+
+
+ggplot(FRC_tropical_palm_top) +
+  aes(x = PartnerDesc, y = share_1, fill = as.character(CmdCode)) +
+  geom_col() +
+  scale_color_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc)) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10)
+  )
+
+
+
+
+##4.cocoa ## 
+
+FRC_tropical_cocoa <- FRC %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                             "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                             "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                             "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+         Commodity == "cocoa") 
+
+FRC_tropical_cocoa_world <- FRC_tropical_cocoa %>% filter(PartnerDesc == "World") %>% group_by(ReporterDesc) %>% summarise(share_4 = sum(share_4))
+sum(FRC_tropical_cocoa_world$share_4)
+
+##Global share.......
+FRC_tropical_cocoa_world %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + 
+  ylim(0,0.12)
+
+
+##scatter plot
+a <- FRC %>% filter(Commodity == "cocoa")
+write.xlsx(a, "FRC_cocoa.xlsx")
+
+%>% 
+  ggplot() +
+  aes(
+    x = share_4,
+    y = share_3,
+    colour = as.character(CmdCode),
+    label = CmdCode
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free_y") +
+  labs(x = "Global share of cocoa items", y = "Export proportion of cocoa items") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  ylim(0, 1)
+
+
+
+ggplot(FRC_tropical_cocoa_top) +
+  aes(x = PartnerDesc, y = share_1, fill = as.character(CmdCode)) +
+  geom_col() +
+  scale_color_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc)) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10)
+  )
+
+
+##5.wood ## 
+
+FRC_tropical_wood <- FRC %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                             "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                             "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                             "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+         Commodity == "wood") 
+
+FRC_tropical_wood_world <- FRC_tropical_wood %>% filter(PartnerDesc == "World") %>% group_by(ReporterDesc) %>% summarise(share_4 = sum(share_4))
+sum(FRC_tropical_wood_world$share_4)
+
+sum(FRC_tropical_wood_world$share_4)
+##Global share.......
+FRC_tropical_wood_world %>%
+    ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 14),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "Global export share of wood", x = "") + 
+  ylim(0,0.05)
+
+
+
+##proportion of share by items
+FRC_tropical_wood_world <- FRC_tropical_wood %>% filter(PartnerDesc == "World")
+
+ggplot(FRC_tropical_wood_world) +
+  aes(x = as.character(CmdCode), y = share_2) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc)) +
+  geom_text(aes(label = scales::percent(share_2, scale = 100, accuracy = 0.01)), hjust = -0.01, size = 4) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20L),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 15)
+  ) +
+  labs(y = "", x = "HS code", size = 10) +
+  ylim(0,1.2)
+
+##
+
+FRC_tropical_wood_top <- FRC_tropical_wood %>% filter(!(PartnerDesc == "World")) %>%
+  group_by(ReporterDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+ggplot(FRC_tropical_wood_top) +
+  aes(x = PartnerDesc, y = share_3) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  coord_flip() +
+  facet_wrap(vars(ReporterDesc), scales = "free") +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") 
+
+
+##scatter plot
+
+ggplot(FRC_tropical_wood_world) +
+  aes(
+    x = share_3 * share_4,
+    y = share_3,
+    colour = as.character(CmdCode),
+    label = CmdCode
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free_y") +
+  labs(x = "Global share of wood items", y = "Export proportion of wood items") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  ylim(0, 1)
+
+
+
+ggplot(FRC_tropical_wood_top) +
+  aes(x = PartnerDesc, y = share_1, fill = as.character(CmdCode)) +
+  geom_col() +
+  scale_color_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc)) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10)
+  )
+
+
+
+##6.cattle ## 
+
+FRC_tropical_cattle <- FRC %>% 
+  filter(ReporterDesc %in% c("Angola", "Brazil", "Bolivia (Plurinational State of)", "Cambodia", "Colombia", "Cote d'Ivore", 
+                             "Congo", "India", "Indonesia", "Lao People's Dem. Rep.", "Madagascar", "Malaysia", 
+                             "Mozambique", "Myanmar", "Nigeria", "Paraguay", "Peru", "South Africa",
+                             "United Rep. of Tanzania", "Thailand", "Ghana", "Viet Nam", "Zambia"),
+         Commodity == "cattle") 
+
+
+FRC_tropical_cattle_world <- FRC_tropical_cattle %>% filter(PartnerDesc == "World") %>% group_by(ReporterDesc) %>% summarise(share_4 = sum(share_4))
+sum(FRC_tropical_cattle_world$share_4)
+
+##Global share.......
+FRC_tropical_cattle_world %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 15),
+    axis.text = element_text(size = 14),
+    axis.title.y = element_text(size = 17)
+  ) +
+  labs(y = "Global export share of cattle", x = "") + 
+  ylim(0,0.1)
+
+
+
+##proportion of share by items
+FRC_tropical_cattle_world <- FRC_tropical_cattle %>% filter(PartnerDesc == "World")
+
+ggplot(FRC_tropical_cattle_world) +
+  aes(x = as.character(CmdCode), y = share_2) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc)) +
+  geom_text(aes(label = scales::percent(share_2, scale = 100, accuracy = 0.01)), hjust = -0.01, size = 4) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20L),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 15)
+  ) +
+  labs(y = "", x = "HS code", size = 10) +
+  ylim(0,1.2)
+
+##
+
+FRC_tropical_cattle_top <- FRC_tropical_cattle %>% filter(!(PartnerDesc == "World")) %>%
+  group_by(ReporterDesc) %>%
+  arrange(desc(share_1)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+ggplot(FRC_tropical_cattle_top) +
+  aes(x = PartnerDesc, y = share_3) +
+  geom_col(fill = "#112446") +
+  theme_gray() +
+  coord_flip() +
+  facet_wrap(vars(ReporterDesc), scales = "free") +
+  geom_text(aes(label = scales::percent(share_3, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") 
+
+
+##scatter plot
+
+ggplot(FRC_tropical_cattle_world) +
+  aes(
+    x = share_3 * share_4,
+    y = share_3,
+    colour = as.character(CmdCode),
+    label = CmdCode
+  ) +
+  geom_point(shape = "bullet", size = 4) +
+  scale_color_hue(direction = 1) +
+  guides(color = FALSE) +
+  theme_gray() +
+  facet_wrap(vars(ReporterDesc), ncol = 4L, scales = "free_y") +
+  labs(x = "Global share of cattle items", y = "Export proportion of cattle items") + 
+  geom_text_repel(
+    segment.color = "grey50",
+    size = 5,
+    max.overlaps = Inf
+  ) +
+  theme(
+    axis.text = element_text(size = 16),
+    axis.text.x = element_text(size = 16),
+    strip.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
+  ylim(0, 1)
+
+
+
+ggplot(FRC_tropical_cattle_top) +
+  aes(x = PartnerDesc, y = share_1, fill = as.character(CmdCode)) +
+  geom_col() +
+  scale_color_hue(direction = 1) +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(ReporterDesc)) +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.text.x = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10)
+  )
+
+
+## Faceting for top 5 imports ##
+
+FRC_tropical_palm_world %>%
+  filter(CmdCode == 1805) %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal()+
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "") + 
+  ylim(0,0.05)
+
+FRC %>%
+  filter(PartnerDesc == "World", Commodity == "wood") %>%
+  group_by(ReporterDesc) %>%
+  summarise(share_4 = sum(share_4)) %>%
+  mutate(Rank = rank(desc(share_4))) %>%
+  filter(Rank <= 20) %>%
+  ggplot() +
+  aes(x = ReporterDesc, y = share_4) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal() +
+  geom_text(aes(label = scales::percent(share_4, scale = 100, accuracy = 0.01)), hjust = -0.03, size = 5) +
+  theme(
+    legend.text = element_text(size = 14),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 10),
+    axis.text = element_text(size = 14)
+  ) +
+  labs(y = "", x = "")
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 1. Import Data
+
+Trade_DetailedTradeMatrix_E_All_Data_NOFLAG <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Trade_DetailedTradeMatrix_E_All_Data/Trade_DetailedTradeMatrix_E_All_Data_NOFLAG.csv")
+Trade_DetailedTradeMatrix_E_All_Data_NOFLAG[is.na(Trade_DetailedTradeMatrix_E_All_Data_NOFLAG)] <- 0
+View(Trade_DetailedTradeMatrix_E_All_Data_NOFLAG)
+
+
+
+
+
+
+##1. Soya ##
+
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Soya")
+
+TradeData_soya <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Soya/soya.csv")
+
+soya_export <- TradeData_soya %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_soya <- soya_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                                  "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                                  "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                                  "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+soya <- bind_rows(soya_export, eu_uk_soya) 
+write_xlsx(soya, path = "soya_export.xlsx")
+
+soya_brazil <- soya %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) 
+
+
+%>%
+  write_xlsx("soya_indicator2_brazil.xlsx")
+
+
+
+
+ggplot(soya_brazil) +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+  
+ggsave("soya_brazil_plot.png", width = 10, height = 6)
+
+## 2. Cocoa ##
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Cocoa")
+
+Cocoa_trade <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/cocoa/cocoa.csv")
+
+cocoa_export <- Cocoa_trade %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_cocoa <- cocoa_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+cocoa <- bind_rows(cocoa_export, eu_uk_cocoa) 
+write_xlsx(cocoa, path = "cocoa_export.xlsx")
+
+cocoa_brazil <- cocoa %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc == "EU & UK" | Rank <= 5) %>%
+  select(-Rank) %>%
+  write_xlsx("cocoa_indicator2_brazil.xlsx")
+
+
+ggplot(cocoa_brazil) +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+
+ggsave("cocoa_brazil_plot.png", width = 10, height = 6)
+
+##3. Coffee ##
+
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Coffee")
+
+coffee_trade <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/coffee/coffee.csv")
+
+coffee_export <- coffee_trade %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_coffee <- coffee_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+coffee <- bind_rows(coffee_export, eu_uk_coffee) 
+write_xlsx(coffee, path = "coffee_export.xlsx")
+
+coffee_brazil <- coffee %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc %in% c("EU & UK", "China") | Rank <= 5) %>%
+  select(-Rank) %>%
+  write_xlsx("coffee_indicator2_brazil.xlsx")
+
+
+ggplot(coffee_brazil) +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+
+ggsave("coffee_brazil_plot.png", width = 10, height = 6)
+
+
+
+##4. palm ##
+
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Palm")
+
+palm_trade <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/palm/palm.csv")
+
+palm_export <- palm_trade %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_palm <- palm_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+palm <- bind_rows(palm_export, eu_uk_palm) 
+write_xlsx(palm, path = "palm_export.xlsx")
+
+palm_brazil <- palm %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc %in% c("EU & UK", "China") | Rank <= 5) %>%
+  select(-Rank) %>%
+  write_xlsx("palm_indicator2_brazil.xlsx")
+
+
+ggplot(palm_brazil) +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+
+ggsave("palm_brazil_plot.png", width = 10, height = 6)
+
+
+
+##5. cattle ##
+
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Cattle")
+
+cattle_trade <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/cattle/cattle.csv")
+
+cattle_export <- cattle_trade %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_cattle <- cattle_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+cattle <- bind_rows(cattle_export, eu_uk_cattle) 
+write_xlsx(cattle, path = "cattle_export.xlsx")
+
+cattle_brazil <- cattle %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc %in% c("EU & UK", "China") | Rank <= 5) %>%
+  select(-Rank) %>%
+  write_xlsx("cattle_indicator2_brazil.xlsx")
+
+
+ggplot(cattle_brazil) +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+
+ggsave("cattle_brazil_plot.png", width = 10, height = 6)
+
+
+
+##6. wood ##
+
+setwd("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/Wood")
+
+wood_trade <- fread("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/wood/wood.csv")
+
+wood_export <- wood_trade %>%
+  select(Period, ReporterDesc, PartnerDesc, CmdCode, CmdDesc, PrimaryValue, FlowDesc) %>% 
+  filter(Period %in% 2015:2018, FlowDesc == "Export") %>% 
+  group_by(ReporterDesc, PartnerDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(PrimaryValue)) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  mutate(Share_export = Export / sum(ifelse(PartnerDesc == "World", Export, 0)))
+
+eu_uk_wood <- wood_export %>% 
+  filter(PartnerDesc %in% c("Austria", "Belgium", "Bulgaria", "Croatia", 
+                            "Cyprus", "Czechia", "Denmark", "Estonia", "Finland", "France", "Germany", 
+                            "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+                            "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom")) %>% 
+  group_by(ReporterDesc, CmdCode, CmdDesc) %>% 
+  summarise(Export = sum(Export), Share_export = sum(Share_export)) %>%
+  mutate(PartnerDesc = "EU & UK")
+
+wood <- bind_rows(wood_export, eu_uk_wood) 
+write_xlsx(wood, path = "wood_export.xlsx")
+
+wood_brazil <- wood %>%
+  filter(ReporterDesc == "Brazil", !(PartnerDesc %in% "World")) %>%
+  group_by(CmdCode, CmdDesc) %>%
+  arrange(desc(Share_export)) %>%
+  mutate(Rank = row_number()) %>%
+  filter(PartnerDesc %in% c("EU & UK", "China") | Rank <= 5) %>%
+  select(-Rank) %>%
+  write_xlsx("wood_indicator2_brazil.xlsx")
+
+data.frame(wood_brazil) %>% ggplot() +
+  aes(x = PartnerDesc, y = Share_export) +
+  geom_col(fill = "#112446") +
+  coord_flip() +
+  theme_minimal() +
+  facet_wrap(vars(CmdCode)) +
+  geom_text(aes(label = scales::percent(Share_export, scale = 100, accuracy = 0.01)), hjust = -0.1, size = 8) +
+  ylim(0,1) +
+  theme(
+    legend.text = element_text(size = 20),
+    legend.position = "bottom",
+    axis.title.x = element_text(size = 20),
+    axis.text = element_text(size = 20),
+    strip.text = element_text(size = 20)
+  ) +
+  labs(y = "Share of exports", x = "")
+
+ggsave("wood_brazil_plot.png", width = 10, height = 6)
+
+
+
+
+
+##Cattle
+## Item == c("Cattle", "Cattle fat, unrendered", "Cattle, butcher fat", "Edible offal of cattle, fresh, chilled or frozen", "Feed, compound, cattle", "Hides, cattle nes", "Hides, cattle, dry salted", "Hides, wet-salted of cattle", "Meat of cattle boneless, fresh or chilled", "Meat of cattle with the bone, fresh or chilled", "Raw hides and skins of cattle", "Raw milk of cattle") 
+
+cattle_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(840:1173, 1195:1225), Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1986, Y1987, Y1988, Y1989, Y1990, Y1991, Y1992, Y1993, Y1994, Y1995, Y1996, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017, Y2018, Y2019, Y2020, Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value")
+
+setDT(cattle_value1)
+
+cattle_value <- cattle_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+    , share := Value / Total_value]
+
+cattle_value$share <- replace(cattle_value$share, is.nan(cattle_value$share), 0)
+
+eu_uk_cattle <- cattle_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+cattle_value <- bind_rows(eu_uk_cattle, cattle_value) %>% mutate(Commodity = "Cattle")
+
+## Cocoa
+##Item == c("Cocoa beans",  "Cocoa butter, fat and oil",  "Cocoa husks and shells",  "Cocoa paste not defatted",  "Cocoa powder and cake") 
+
+coca_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% 661:665, Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1986, Y1987, Y1988, Y1989, Y1990, Y1991, Y1992, Y1993, Y1994, Y1995, Y1996, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017, Y2018, Y2019, Y2020, Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value") 
+
+setDT(coca_value1)
+
+coca_value <- coca_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+    , share := Value / Total_value]
+
+coca_value$share <- replace(coca_value$share, is.nan(coca_value$share), 0)
+
+eu_uk_coca <- coca_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+coca_value <- bind_rows(eu_uk_coca, coca_value) %>% mutate(Commodity = "Cocoa")
+
+##Palm
+##Item == c("Cake of palm kernel", "Oil of palm kernel", "Palm kernels", "Palm oil" )
+
+palm_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% 256:259, Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1986, Y1987, Y1988, Y1989, Y1990, Y1991, Y1992, Y1993, Y1994, Y1995, Y1996, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017, Y2018, Y2019, Y2020, Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value") 
+
+setDT(palm_value1)
+
+palm_value <- palm_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+    , share := Value / Total_value]
+
+palm_value$share <- replace(palm_value$share, is.nan(palm_value$share), 0)
+
+eu_uk_palm <- palm_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+palm_value <- bind_rows(eu_uk_palm, palm_value) %>% mutate(Commodity = "Palm")
+
+
+##Soya
+##Item == c("Cake of soya beans", "Soya bean oil", "Soya beans", "Soya curd", "Soya paste", "Soya sauce")
+
+soy_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item.Code %in% c(236:241), Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1986, Y1987, Y1988, Y1989, Y1990, Y1991, Y1992, Y1993, Y1994, Y1995, Y1996, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017, Y2018, Y2019, Y2020, Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value") 
+
+setDT(soy_value1)
+
+soy_value <- soy_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][, Total_value := sum(Value), by = .(Reporter.Countries, Year)][, share := Value / Total_value]
+
+soy_value$share <- replace(soy_value$share, is.nan(soy_value$share), 0)
+
+eu_uk_soy <- soy_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+soy_value <- bind_rows(eu_uk_soy, soy_value) %>% mutate(Commodity = "Soy")
+
+
+## Rubber
+##Item == c("Natural rubber in other forms", "Natural rubber in primary forms") 
+rubber_value1 <- Trade_DetailedTradeMatrix_E_All_Data_NOFLAG %>% filter(Item %in% c("Natural rubber in other forms", "Natural rubber in primary forms"), Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1986, Y1987, Y1988, Y1989, Y1990, Y1991, Y1992, Y1993, Y1994, Y1995, Y1996, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017, Y2018, Y2019, Y2020, Y2021)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value") 
+
+setDT(rubber_value1)
+
+rubber_value <- rubber_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+    , share := Value / Total_value]
+
+rubber_value$share <- replace(rubber_value$share, is.nan(rubber_value$share), 0)
+
+eu_uk_rubber <- rubber_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland"))%>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+rubber_value <- bind_rows(eu_uk_rubber, rubber_value) %>% mutate(Commodity = "Rubber")
+
+
+## Wood
+Forestry_Trade_Flows_E_All_Data_NOFLAG <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Export data/Forestry_Trade_Flows_E_All_Data/Forestry_Trade_Flows_E_All_Data_NOFLAG.csv")
+
+##Item == c("Industrial roundwood, coniferous (export/import)", "Industrial roundwood, non-coniferous non-tropical (export/import)",  "Industrial roundwood, non-coniferous tropical (export/import)", "Newsprint", "Plywood",  "Sawnwood, coniferous",  "Sawnwood, non-coniferous all",  "Veneer sheets",  "Wood chips and particles") 
+
+wood_value1 <- Forestry_Trade_Flows_E_All_Data_NOFLAG %>% filter(Item %in% c("Industrial roundwood, coniferous (export/import)", "Industrial roundwood, non-coniferous non-tropical (export/import)",  "Industrial roundwood, non-coniferous tropical (export/import)", "Newsprint", "Plywood",  "Sawnwood, coniferous",  "Sawnwood, non-coniferous all",  "Veneer sheets",  "Wood chips and particles"), Element == "Export Value") %>% select(c(Reporter.Countries, Partner.Countries, Y1997, Y1998, Y1999, Y2000, Y2001, Y2002, Y2003, Y2004, Y2005, Y2006, Y2007, Y2008, Y2009, Y2010, Y2011, Y2012, Y2013, Y2014, Y2015, Y2016, Y2017)) %>% pivot_longer(cols = -c(Reporter.Countries, Partner.Countries), names_to = "Year", values_to = "Value") 
+
+setDT(wood_value1)
+
+wood_value <- wood_value1[, .(Value = sum(Value)), by = .(Reporter.Countries, Partner.Countries, Year)][
+  , Total_value := sum(Value), by = .(Reporter.Countries, Year)][
+    , share := Value / Total_value]
+
+wood_value$share <- replace(wood_value$share, is.nan(wood_value$share), 0)
+
+eu_uk_wood <- wood_value %>% filter(Partner.Countries %in% c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands (Kingdom of the)", "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain and Northern Ireland")) %>% group_by(Reporter.Countries, Year) %>% summarise(Value = sum(Value), share= sum(share), Total_value = mean(Total_value)) %>% mutate(Partner.Countries = "EU & UK")
+
+wood_value <- bind_rows(eu_uk_wood, wood_value) %>% mutate(Commodity = "wood")
+
+
+share_export_EUUK <- bind_rows(cattle_value, coffee_value, coca_value, soy_value, rubber_value, palm_value)
+write_csv(share_export_EUUK, "share_export_EU&UK.csv")
+
+
+##Export into the excel file as sheet
+
+# Combine dataframes into a list
+df_list <- list(coffee = coffee_Brazil, soy = soy_Brazil, cattle = cattle_Brazil, coca = coca_Brazil, palm = palm_Brazil, rubber = rubber_Brazil, wood = wood_Brazil)
+
+# Create a new Excel workbook
+wb <- createWorkbook()
+
+# Loop through the list and add dataframes to separate sheets
+for (df_name in names(df_list)) {
+  addWorksheet(wb, sheetName = df_name)
+  writeData(wb, sheet = df_name, x = df_list[[df_name]])
+}
+
+# Save the workbook to a file
+saveWorkbook(wb, "Brazil_export_share_FRCs.xlsx", overwrite = TRUE)
+
+
+## 8/21/2023 ##
+
+##1. Coffee ##
+
+coffee <- read.csv("C:/Users/Manoj/OneDrive - Kansas State University/EUDR/Data/Share of exports to the EU and the UK/coffee.csv")
+
+coffee_export <- coffee %>% select(Period, ReporterDesc, FlowDesc, PartnerDesc, PrimaryValue) %>% filter(FlowDesc = "Export") 
